@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['plate']
+
+roboflow:
+  workspace: thaidetec
+  project: my-first-project-y4wxe
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/thaidetec/my-first-project-y4wxe/dataset/1
