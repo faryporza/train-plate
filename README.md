@@ -25,6 +25,7 @@ python train.py
 ```
 
 # เริ่มเทรนใหม่ทั้งหมด
+จากไฟล์ `trainGPU.py`
 ```bash
 python train.py --epochs 100
 ```
