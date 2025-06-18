@@ -12,6 +12,18 @@ yolo_env\Scripts\activate
 # บน macOS/Linux:
 source yolo_env/bin/activate
 ```
+## การใช้งาน
+
+### 1. ดาวน์โหลดชุดข้อมูล (หากยังไม่ได้ทำ)
+
+ชุดข้อมูลควรถูกดาวน์โหลดไว้ในโฟลเดอร์ `My-First-Project-1` แล้ว
+
+### 2. เริ่มการฝึก
+
+```bash
+cd d:\train
+python train.py
+```
 
 # เริ่มเทรนใหม่ทั้งหมด
 python train.py --epochs 100
