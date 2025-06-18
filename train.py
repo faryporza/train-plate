@@ -27,76 +27,93 @@ def main():
     
     # Training parameters
     training_params = {
-        'data': data_yaml,
-        'epochs': 100,
-        'imgsz': 640,
-        'batch': 16,
-        'lr0': 0.01,
-        'lrf': 0.1,
-        'momentum': 0.937,
-        'weight_decay': 0.0005,
-        'warmup_epochs': 3,
-        'warmup_momentum': 0.8,
-        'warmup_bias_lr': 0.1,
-        'box': 7.5,
-        'cls': 0.5,
-        'dfl': 1.5,
-        'pose': 12.0,
-        'kobj': 1.0,
-        'label_smoothing': 0.0,
-        'nbs': 64,
-        'hsv_h': 0.015,
-        'hsv_s': 0.7,
-        'hsv_v': 0.4,
-        'degrees': 0.0,
-        'translate': 0.1,
-        'scale': 0.5,
-        'shear': 0.0,
-        'perspective': 0.0,
-        'flipud': 0.0,
-        'fliplr': 0.5,
-        'mosaic': 1.0,
-        'mixup': 0.0,
-        'copy_paste': 0.0,
-        'auto_augment': 'randaugment',
-        'erasing': 0.4,
-        'crop_fraction': 1.0,
-        'save': True,
-        'save_period': -1,
-        'cache': False,
-        'device': '',
-        'workers': 8,
-        'project': 'runs/detect',
-        'name': 'license_plate_train',
-        'exist_ok': False,
-        'pretrained': True,
-        'optimizer': 'auto',
-        'verbose': True,
-        'seed': 0,
-        'deterministic': True,
-        'single_cls': False,
-        'rect': False,
-        'cos_lr': False,
-        'close_mosaic': 10,
-        'resume': False,
-        'amp': True,
-        'fraction': 1.0,
-        'profile': False,
-        'freeze': None,
-        'multi_scale': False,
-        'overlap_mask': True,
-        'mask_ratio': 4,
-        'dropout': 0.0,
-        'val': True,
-        'split': 'val',
-        'save_json': False,
-        'save_hybrid': False,
-        'conf': None,
-        'iou': 0.7,
-        'max_det': 300,
-        'half': False,
-        'dnn': False,
-        'plots': True,
+        # พารามิเตอร์พื้นฐานสำหรับการเทรน
+        'data': data_yaml,           # ไฟล์ config ข้อมูลสำหรับการเทรนโมเดล
+        'epochs': 100,               # จำนวนรอบในการเทรน
+        'imgsz': 640,                # ขนาดของรูปภาพที่ใช้ในการเทรน (พิกเซล)
+        'batch': 16,                 # จำนวนรูปภาพต่อการประมวลผลหนึ่งครั้ง
+        
+        # พารามิเตอร์สำหรับการปรับค่า Learning Rate
+        'lr0': 0.01,                 # ค่า learning rate เริ่มต้น
+        'lrf': 0.1,                  # ค่า learning rate สุดท้าย (คูณกับ lr0)
+        'momentum': 0.937,           # ค่า momentum สำหรับ optimizer
+        'weight_decay': 0.0005,      # ค่า weight decay สำหรับป้องกันการ overfitting
+        'warmup_epochs': 3,          # จำนวนรอบการเทรนที่ใช้สำหรับ warmup
+        'warmup_momentum': 0.8,      # ค่า momentum เริ่มต้นในช่วง warmup
+        'warmup_bias_lr': 0.1,       # ค่า bias learning rate ในช่วง warmup
+        
+        # พารามิเตอร์สำหรับการคำนวณ Loss
+        'box': 7.5,                  # น้ำหนักของ box loss
+        'cls': 0.5,                  # น้ำหนักของ class loss
+        'dfl': 1.5,                  # น้ำหนักของ DFL loss
+        'pose': 12.0,                # น้ำหนักของ pose loss (สำหรับการตรวจจับท่าทาง)
+        'kobj': 1.0,                 # น้ำหนักของ keypoint-object loss
+        'label_smoothing': 0.0,      # ค่า label smoothing (ช่วยลดการ overfitting)
+        'nbs': 64,                   # ค่า nominal batch size สำหรับการปรับพารามิเตอร์
+        
+        # พารามิเตอร์สำหรับการปรับแต่งรูปภาพ (Data Augmentation)
+        'hsv_h': 0.015,              # การปรับค่าสี Hue
+        'hsv_s': 0.7,                # การปรับค่าความอิ่มตัวของสี (Saturation)
+        'hsv_v': 0.4,                # การปรับค่าความสว่าง (Value)
+        'degrees': 0.0,              # การหมุนภาพ (องศา)
+        'translate': 0.1,            # การเลื่อนตำแหน่งภาพ
+        'scale': 0.5,                # การปรับขนาดภาพ
+        'shear': 0.0,                # การเฉือนภาพ
+        'perspective': 0.0,          # การปรับมุมมองภาพ
+        'flipud': 0.0,               # โอกาสในการพลิกภาพจากบนลงล่าง
+        'fliplr': 0.5,               # โอกาสในการพลิกภาพจากซ้ายไปขวา
+        'mosaic': 1.0,               # โอกาสในการใช้เทคนิค mosaic
+        'mixup': 0.0,                # โอกาสในการใช้เทคนิค mixup
+        'copy_paste': 0.0,           # โอกาสในการใช้เทคนิค copy-paste
+        'auto_augment': 'randaugment', # ใช้การเพิ่มข้อมูลแบบอัตโนมัติด้วย RandAugment
+        'erasing': 0.4,              # โอกาสในการลบบางส่วนของภาพ
+        'crop_fraction': 1.0,        # สัดส่วนของการครอปภาพ
+        
+        # พารามิเตอร์สำหรับการบันทึกและการแคช
+        'save': True,                # บันทึกโมเดล
+        'save_period': -1,           # บันทึกโมเดลทุกๆ n epochs (-1 = บันทึกเฉพาะโมเดลที่ดีที่สุด)
+        'cache': False,              # แคชข้อมูลในหน่วยความจำ
+        
+        # พารามิเตอร์สำหรับฮาร์ดแวร์และการประมวลผล
+        'device': '',                # อุปกรณ์ที่ใช้ในการเทรน (ว่างเปล่า = เลือกอัตโนมัติ)
+        'workers': 8,                # จำนวน worker สำหรับการโหลดข้อมูล
+        'project': 'runs/detect',    # โฟลเดอร์โปรเจค
+        'name': 'license_plate_train', # ชื่อการเทรนนี้
+        'exist_ok': False,           # อนุญาตให้เขียนทับโฟลเดอร์เดิม
+        
+        # พารามิเตอร์สำหรับโมเดล
+        'pretrained': True,          # ใช้โมเดลที่ผ่านการเทรนมาแล้ว
+        'optimizer': 'auto',         # ตัวเลือก optimizer (auto, SGD, Adam, etc.)
+        'verbose': True,             # แสดงข้อมูลโดยละเอียด
+        'seed': 0,                   # ค่า seed สำหรับสร้างตัวเลขสุ่ม
+        'deterministic': True,       # ใช้การคำนวณแบบ deterministic
+        'single_cls': False,         # เทรนโมเดลด้วยคลาสเดียว
+        'rect': False,               # ใช้การเทรนแบบ rectangular
+        'cos_lr': False,             # ใช้ cosine learning rate scheduler
+        'close_mosaic': 10,          # ปิดการใช้ mosaic ก่อนจบการเทรน n epochs
+        'resume': False,             # ทำการเทรนต่อจากครั้งก่อน
+        'amp': True,                 # ใช้ mixed precision training
+        'fraction': 1.0,             # สัดส่วนของชุดข้อมูลที่จะใช้
+        'profile': False,            # แสดงข้อมูล profile ของโค้ด
+        'freeze': None,              # แช่แข็งเลเยอร์ (ไม่อัปเดตค่า weight)
+        
+        # พารามิเตอร์สำหรับโมเดลขั้นสูง
+        'multi_scale': False,        # ใช้การเทรนแบบ multi-scale
+        'overlap_mask': True,        # อนุญาตให้มาส์กทับซ้อนกัน
+        'mask_ratio': 4,             # อัตราส่วนการลดขนาดมาส์ก
+        'dropout': 0.0,              # ค่า dropout rate
+        
+        # พารามิเตอร์สำหรับการทดสอบ
+        'val': True,                 # ทดสอบบนชุดข้อมูล validation
+        'split': 'val',              # ชุดข้อมูลสำหรับการทดสอบ (train, val, test)
+        'save_json': False,          # บันทึกผลลัพธ์เป็นไฟล์ JSON
+        'save_hybrid': False,        # บันทึกผลลัพธ์แบบ hybrid
+        'conf': None,                # ค่าความเชื่อมั่นขั้นต่ำสำหรับการตรวจจับ
+        'iou': 0.7,                  # ค่า IoU threshold
+        'max_det': 300,              # จำนวนวัตถุสูงสุดที่ตรวจจับได้ต่อรูป
+        'half': False,               # ใช้ FP16 half-precision inference
+        'dnn': False,                # ใช้ OpenCV DNN สำหรับ ONNX inference
+        'plots': True,               # สร้างกราฟและรูปภาพผลลัพธ์
     }
     
     print("Starting training with the following parameters:")
