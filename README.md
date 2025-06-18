@@ -21,12 +21,14 @@ source yolo_env/bin/activate
 ### 2. เริ่มการฝึก
 
 ```bash
-cd d:\train
 python train.py
 ```
 
 # เริ่มเทรนใหม่ทั้งหมด
+```bash
 python train.py --epochs 100
-
+```
 # เทรนต่อจากโมเดลเดิม
+```bash
 python train.py --resume --epochs 150
+```
