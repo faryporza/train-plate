@@ -1,8 +1,51 @@
 import os
 from ultralytics import YOLO
 import yaml
+import argparse
+import glob
+
+def check_previous_training(project_path, name):
+    """ตรวจสอบการเทรนก่อนหน้า และแสดงข้อมูล"""
+    run_dir = os.path.join(project_path, name)
+    weights_dir = os.path.join(run_dir, "weights")
+    
+    if not os.path.exists(run_dir):
+        return False, 0, None
+    
+    # ตรวจสอบโมเดลที่บันทึกไว้
+    best_model = os.path.join(weights_dir, "best.pt")
+    last_model = os.path.join(weights_dir, "last.pt")
+    
+    model_path = None
+    if os.path.exists(last_model):
+        model_path = last_model
+    elif os.path.exists(best_model):
+        model_path = best_model
+    
+    # พยายามดึงข้อมูล epoch จาก results.csv
+    results_csv = os.path.join(run_dir, "results.csv")
+    last_epoch = 0
+    
+    if os.path.exists(results_csv):
+        import csv
+        try:
+            with open(results_csv, 'r') as f:
+                csv_reader = csv.reader(f)
+                rows = list(csv_reader)
+                if len(rows) > 1:  # มีเฮดเดอร์ + ข้อมูลอย่างน้อย 1 แถว
+                    last_epoch = int(rows[-1][0])  # ดึง epoch จากคอลัมน์แรกของแถวสุดท้าย
+        except:
+            pass
+    
+    return os.path.exists(run_dir), last_epoch, model_path
 
 def main():
+    # เพิ่มตัวแปรรับค่าพารามิเตอร์จาก command line สำหรับการเทรนต่อ
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--resume', action='store_true', help='เทรนต่อจากโมเดลล่าสุด')
+    parser.add_argument('--epochs', type=int, default=100, help='จำนวน epochs ทั้งหมดที่ต้องการเทรน')
+    args = parser.parse_args()
+    
     print("Starting YOLOv11 License Plate Detection Training...")
     
     # Set up paths
@@ -21,15 +64,44 @@ def main():
     print(f"Dataset classes: {data_config['names']}")
     print(f"Number of classes: {data_config['nc']}")
     
+    # โฟลเดอร์สำหรับโปรเจค
+    project_dir = "runs/detect"
+    run_name = "license_plate_train"
+    
+    # ตรวจสอบการเทรนก่อนหน้า
+    has_previous, last_epoch, model_path = check_previous_training(project_dir, run_name)
+    
+    # แสดงข้อความเกี่ยวกับการเทรนก่อนหน้า
+    if has_previous:
+        print("\n" + "="*50)
+        print(f"📂 พบการเทรนก่อนหน้าที่ {os.path.join(project_dir, run_name)}")
+        print(f"⏱️ เทรนไปแล้ว {last_epoch} epochs")
+        
+        if model_path:
+            print(f"💾 พบไฟล์โมเดลที่ {model_path}")
+        else:
+            print("⚠️ ไม่พบไฟล์โมเดล best.pt หรือ last.pt")
+        
+        if args.resume:
+            print(f"✅ กำลังจะเทรนต่อจาก epoch {last_epoch+1} ถึง {args.epochs}")
+        else:
+            print("❌ ไม่ได้เลือกโหมดเทรนต่อ (--resume) การเทรนจะเริ่มใหม่จาก epoch 1")
+            print("   หากต้องการเทรนต่อ ให้รันด้วยคำสั่ง: python train.py --resume --epochs 150")
+        print("="*50 + "\n")
+    
     # Initialize YOLOv11 model
-    # You can use different model sizes: yolov8n.pt, yolov8s.pt, yolov8m.pt, yolov8l.pt, yolov8x.pt
-    model = YOLO('yolo11n.pt')  # Start with nano model for faster training
+    if args.resume and model_path:
+        print(f"โหลดโมเดลจาก {model_path} เพื่อเทรนต่อ...")
+        model = YOLO(model_path)
+    else:
+        print("เริ่มเทรนใหม่ด้วยโมเดล yolo11n.pt...")
+        model = YOLO('yolo11n.pt')  # Start with nano model for faster training
     
     # Training parameters
     training_params = {
         # พารามิเตอร์พื้นฐานสำหรับการเทรน
         'data': data_yaml,           # ไฟล์ config ข้อมูลสำหรับการเทรนโมเดล
-        'epochs': 100,               # จำนวนรอบในการเทรน
+        'epochs': args.epochs,       # จำนวนรอบในการเทรนทั้งหมด (รวมกับที่เทรนก่อนหน้า ถ้า resume=True)
         'imgsz': 640,                # ขนาดของรูปภาพที่ใช้ในการเทรน (พิกเซล)
         'batch': 16,                 # จำนวนรูปภาพต่อการประมวลผลหนึ่งครั้ง
         
@@ -91,7 +163,7 @@ def main():
         'rect': False,               # ใช้การเทรนแบบ rectangular
         'cos_lr': False,             # ใช้ cosine learning rate scheduler
         'close_mosaic': 10,          # ปิดการใช้ mosaic ก่อนจบการเทรน n epochs
-        'resume': False,             # ทำการเทรนต่อจากครั้งก่อน
+        'resume': args.resume,       # ทำการเทรนต่อจากครั้งก่อน (รับค่าจาก command line)
         'amp': True,                 # ใช้ mixed precision training
         'fraction': 1.0,             # สัดส่วนของชุดข้อมูลที่จะใช้
         'profile': False,            # แสดงข้อมูล profile ของโค้ด
@@ -142,6 +214,23 @@ def main():
     except Exception as e:
         print(f"Error during training: {str(e)}")
         return
+    
+    # แสดงคำอธิบายเพิ่มเติมเกี่ยวกับการเทรนต่อ
+    print("\n" + "="*80)
+    print("📝 คำแนะนำในการเทรนต่อ (Resume Training)")
+    print("="*80)
+    print("✅ หากต้องการเทรนต่อในอนาคต สามารถใช้คำสั่งนี้:")
+    print(f"   python train.py --resume --epochs {args.epochs + 50}")
+    print()
+    print("🔎 คำอธิบายการเทรนต่อ:")
+    print("• โมเดลจะโหลดไฟล์ last.pt หรือ best.pt จากโฟลเดอร์ runs/detect/license_plate_train/weights/")
+    print(f"• จะเทรนต่อจาก epoch {args.epochs + 1} ไปจนถึงจำนวน epochs ที่กำหนดใหม่")
+    print("• ประวัติการเทรนทั้งหมดจะถูกบันทึกต่อในไฟล์ results.csv")
+    print()
+    print("⚠️ ข้อควรระวัง:")
+    print("• ห้ามลบหรือย้ายโฟลเดอร์ runs/detect/license_plate_train/ มิฉะนั้นจะไม่สามารถเทรนต่อได้")
+    print("• ถ้ามีการเปลี่ยนแปลง data.yaml หรือชุดข้อมูล อาจทำให้การเทรนต่อมีปัญหาได้")
+    print("="*80)
     
     print("\nTraining pipeline completed!")
 
