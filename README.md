@@ -19,11 +19,6 @@ source yolo_env/bin/activate
 ชุดข้อมูลควรถูกดาวน์โหลดไว้ในโฟลเดอร์ `My-First-Project-1` แล้ว
 
 ### 2. เริ่มการฝึก
-
-```bash
-python train.py
-```
-
 # เริ่มเทรนใหม่ทั้งหมด
 จากไฟล์ `trainGPU.py`
 ```bash
